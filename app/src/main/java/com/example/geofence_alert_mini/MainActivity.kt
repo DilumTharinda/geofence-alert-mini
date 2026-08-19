@@ -7,6 +7,9 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import android.widget.TextView
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.LocationServices
 
@@ -15,11 +18,31 @@ class MainActivity : AppCompatActivity() {
     private val locationPermissionRequestCode = 1001
     private val backgroundPermissionRequestCode = 1002
 
+    private lateinit var tvActiveGeofence: TextView
+    private lateinit var rvHistory: RecyclerView
+    private lateinit var adapter: HistoryAdapter
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        tvActiveGeofence = findViewById(R.id.tvActiveGeofence)
+        rvHistory = findViewById(R.id.rvHistory)
+
+        setupHistoryList()
         checkAndRequestPermissions()
+    }
+
+    private fun setupHistoryList() {
+        adapter = HistoryAdapter(HistoryLogger.getEvents())
+        rvHistory.layoutManager = LinearLayoutManager(this)
+        rvHistory.adapter = adapter
+
+        HistoryLogger.addListener {
+            runOnUiThread {
+                adapter.notifyDataSetChanged()
+            }
+        }
     }
 
     private fun checkAndRequestPermissions() {
@@ -48,7 +71,11 @@ class MainActivity : AppCompatActivity() {
                     arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION),
                     backgroundPermissionRequestCode
                 )
+            } else {
+                registerGeofence()
             }
+        } else {
+            registerGeofence()
         }
     }
 
@@ -62,6 +89,11 @@ class MainActivity : AppCompatActivity() {
             locationPermissionRequestCode -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     checkBackgroundPermission()
+                }
+            }
+            backgroundPermissionRequestCode -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    registerGeofence()
                 }
             }
         }
@@ -84,10 +116,10 @@ class MainActivity : AppCompatActivity() {
 
         geofencingClient.addGeofences(request, pendingIntent)
             .addOnSuccessListener {
-                // Geofence registered successfully
+                tvActiveGeofence.text = "Active Geofence: ${GeofenceHelper.GEOFENCE_ID}"
             }
             .addOnFailureListener { e ->
-                // Registration failed, e.message has the reason
+                tvActiveGeofence.text = "Active Geofence: Failed to register (${e.message})"
             }
     }
 }
