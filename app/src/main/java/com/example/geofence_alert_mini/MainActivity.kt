@@ -64,4 +64,28 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private lateinit var geofencingClient: GeofencingClient
+
+    private fun registerGeofence() {
+        geofencingClient = LocationServices.getGeofencingClient(this)
+        val geofence = GeofenceHelper.buildGeofence()
+        val request = GeofenceHelper.buildGeofencingRequest(geofence)
+        val pendingIntent = GeofenceHelper.buildGeofencePendingIntent(this)
+
+        if (ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+
+        geofencingClient.addGeofences(request, pendingIntent)
+            .addOnSuccessListener {
+                // Geofence registered successfully
+            }
+            .addOnFailureListener { e ->
+                // Registration failed, e.message has the reason
+            }
+    }
 }
