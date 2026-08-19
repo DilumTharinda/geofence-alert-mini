@@ -48,6 +48,15 @@ object GeofenceHelper {
                "2. $GEOFENCE_2_ID ($GEOFENCE_2_LAT, $GEOFENCE_2_LNG) r=$GEOFENCE_2_RADIUS"
     }
 
+    fun getTransitionName(transitionType: Int): String {
+        return when (transitionType) {
+            Geofence.GEOFENCE_TRANSITION_ENTER -> "Entered"
+            Geofence.GEOFENCE_TRANSITION_EXIT -> "Exited"
+            Geofence.GEOFENCE_TRANSITION_DWELL -> "Dwelling in"
+            else -> "Unknown transition"
+        }
+    }
+
     fun buildGeofencePendingIntent(context: Context): PendingIntent {
         val intent = Intent(context, GeofenceBroadcastReceiver::class.java)
         return PendingIntent.getBroadcast(
