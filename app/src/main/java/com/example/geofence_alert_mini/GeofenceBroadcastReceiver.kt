@@ -1,34 +1,60 @@
 package com.example.geofence_alert_mini
 
+import android.R
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.util.Log
+import android.os.Build
+import android.widget.Toast
+import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.Geofence
 import com.google.android.gms.location.GeofencingEvent
 
 class GeofenceBroadcastReceiver : BroadcastReceiver() {
+
     override fun onReceive(context: Context, intent: Intent) {
-        val geofencingEvent = GeofencingEvent.fromIntent(intent)
-        if (geofencingEvent == null) {
-            Log.e("GeofenceReceiver", "GeofencingEvent is null")
-            return
-        }
+        val geofencingEvent = GeofencingEvent.fromIntent(intent) ?: return
 
         if (geofencingEvent.hasError()) {
-            Log.e("GeofenceReceiver", "GeofencingEvent error: ${geofencingEvent.errorCode}")
             return
         }
 
-        val geofenceTransition = geofencingEvent.geofenceTransition
+        val transitionType = geofencingEvent.geofenceTransition
+        val message = when (transitionType) {
+            Geofence.GEOFENCE_TRANSITION_ENTER -> "Entered geofence"
+            Geofence.GEOFENCE_TRANSITION_EXIT -> "Exited geofence"
+            else -> null
+        } ?: return
 
-        if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER ||
-            geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT
-        ) {
-            val triggeringGeofences = geofencingEvent.triggeringGeofences
-            Log.i("GeofenceReceiver", "Geofence transition: $geofenceTransition")
-        } else {
-            Log.e("GeofenceReceiver", "Invalid transition type: $geofenceTransition")
+        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        showNotification(context, message)
+
+        HistoryLogger.addEvent(message)
+    }
+
+    private fun showNotification(context: Context, message: String) {
+        val channelId = "geofence_alerts"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "Geofence Alerts",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            val manager = context.getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
         }
+
+        val notification = NotificationCompat.Builder(context, channelId)
+            .setContentTitle("Geofence Alert")
+            .setContentText(message)
+            .setSmallIcon(R.drawable.ic_dialog_map)
+            .setAutoCancel(true)
+            .build()
+
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(System.currentTimeMillis().toInt(), notification)
     }
 }
