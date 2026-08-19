@@ -4,9 +4,7 @@ plugins {
 
 android {
     namespace = "com.example.geofence_alert_mini"
-    compileSdk {
-        version = release(37)
-    }
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.example.geofence_alert_mini"
@@ -37,6 +35,6 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core.ktx)
     implementation(libs.material)
-    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation(libs.play.services.location)
     testImplementation(libs.junit)
 }
