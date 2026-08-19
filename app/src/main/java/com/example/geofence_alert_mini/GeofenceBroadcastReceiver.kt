@@ -25,14 +25,19 @@ class GeofenceBroadcastReceiver : BroadcastReceiver() {
         }
 
         val transitionType = geofencingEvent.geofenceTransition
-        val message = when (transitionType) {
-            Geofence.GEOFENCE_TRANSITION_ENTER -> "Entered geofence"
-            Geofence.GEOFENCE_TRANSITION_EXIT -> "Exited geofence"
-            Geofence.GEOFENCE_TRANSITION_DWELL -> "Dwelling in geofence"
-            else -> "Unknown transition"
+        val triggeringGeofences = geofencingEvent.triggeringGeofences
+        val geofenceIds = triggeringGeofences?.joinToString { it.requestId } ?: "Unknown"
+
+        val transitionName = when (transitionType) {
+            Geofence.GEOFENCE_TRANSITION_ENTER -> "Entered"
+            Geofence.GEOFENCE_TRANSITION_EXIT -> "Exited"
+            Geofence.GEOFENCE_TRANSITION_DWELL -> "Dwelling in"
+            else -> "Unknown transition for"
         }
 
-        Log.d(TAG, "Geofence Transition: $message")
+        val message = "$transitionName: $geofenceIds"
+
+        Log.d(TAG, "Geofence Event: $message")
         Toast.makeText(context, message, Toast.LENGTH_LONG).show()
         showNotification(context, message)
 

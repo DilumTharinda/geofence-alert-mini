@@ -15,10 +15,19 @@ object HistoryLogger {
         val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
         val timestamp = formatter.format(Date())
         events.add(0, HistoryEvent(type, timestamp))
-        listeners.forEach { it.invoke() }
+        notifyListeners()
     }
 
     fun getEvents(): List<HistoryEvent> = events
+
+    fun clear() {
+        events.clear()
+        notifyListeners()
+    }
+
+    private fun notifyListeners() {
+        listeners.forEach { it.invoke() }
+    }
 
     fun addListener(listener: () -> Unit) {
         listeners.add(listener)

@@ -7,9 +7,14 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.gms.location.GeofencingClient
 import com.google.android.gms.location.LocationServices
 
@@ -20,17 +25,43 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var tvActiveGeofence: TextView
     private lateinit var rvHistory: RecyclerView
+    private lateinit var fabClear: FloatingActionButton
     private lateinit var adapter: HistoryAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+
         tvActiveGeofence = findViewById(R.id.tvActiveGeofence)
         rvHistory = findViewById(R.id.rvHistory)
+        fabClear = findViewById(R.id.fabClear)
+
+        fabClear.setOnClickListener {
+            HistoryLogger.clear()
+        }
 
         setupHistoryList()
         checkAndRequestPermissions()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.action_refresh -> {
+                tvActiveGeofence.text = "Refreshing..."
+                registerGeofence()
+                Toast.makeText(this, "Geofences re-registered", Toast.LENGTH_SHORT).show()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
     }
 
     private fun setupHistoryList() {
@@ -103,8 +134,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun registerGeofence() {
         geofencingClient = LocationServices.getGeofencingClient(this)
-        val geofence = GeofenceHelper.buildGeofence()
-        val request = GeofenceHelper.buildGeofencingRequest(geofence)
+        val geofences = GeofenceHelper.buildGeofences()
+        val request = GeofenceHelper.buildGeofencingRequest(geofences)
         val pendingIntent = GeofenceHelper.buildGeofencePendingIntent(this)
 
         if (ActivityCompat.checkSelfPermission(
@@ -116,10 +147,10 @@ class MainActivity : AppCompatActivity() {
 
         geofencingClient.addGeofences(request, pendingIntent)
             .addOnSuccessListener {
-                tvActiveGeofence.text = "Active Geofence: ${GeofenceHelper.GEOFENCE_ID}"
+                tvActiveGeofence.text = "Active Geofences:\n${GeofenceHelper.getGeofenceDescription()}"
             }
             .addOnFailureListener { e ->
-                tvActiveGeofence.text = "Active Geofence: Failed to register (${e.message})"
+                tvActiveGeofence.text = "Geofence Registration Failed: ${e.message}"
             }
     }
 }
